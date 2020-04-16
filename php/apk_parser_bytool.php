@@ -1,10 +1,12 @@
 <?php
 /**
  * apk包解析
+ * apk package parsing
  */
 class ApkParser
 {
     // 解析需要的一些命令(需要安装java1.7，例如: yum install java-1.7.0-openjdk-devel)
+    // We need some commands (require java1.7, for example CentOS : yum install java-1.7.0-openjdk-devel)
     private static $arrCmdMap = array(
         "app_parser.cmd.aapt" => "aapt d badging",
         "app_parser.cmd.verify" => "jarsigner -verify",
@@ -13,7 +15,8 @@ class ApkParser
 
     /**
      * 解析包入口
-     * @param string $apkPath apk的路径
+     * Base function of parsing
+     * @param string $apkPath apk path
      */
     public static function parse($apkPath)
     {
@@ -27,6 +30,7 @@ class ApkParser
 
     /**
      * 解析基本信息
+     * Parsing the basic info
      */
     private static function parseBase($apkPath)
     {
@@ -44,7 +48,7 @@ class ApkParser
         $verifyCmd = self::$arrCmdMap["app_parser.cmd.verify"]." $apkPath";
         exec($verifyCmd, $out, $ret);
         if ($ret !== 0) {
-            $msg = "包校验出错($verifyCmd: ".implode("\n", $out).")!";
+            $msg = "Package verification failed ($verifyCmd: ".implode("\n", $out).")!";
             throw new Exception($msg);
         }
     }
@@ -54,16 +58,16 @@ class ApkParser
         $aaptCmd = self::$arrCmdMap["app_parser.cmd.aapt"]." $apkPath";
         exec($aaptCmd, $out, $ret);
         if ($ret !== 0) {
-            $msg = "aapt命令执行出错($aaptCmd: ".implode("\n", $out).")!";
+            $msg = "aapt error ($aaptCmd: ".implode("\n", $out).")!";
             throw new Exception($msg);
         }
         return $out;
     }
 
     /**
-     * 获取aapt的应用名称
-     * 名称 application-label-zh_CN application: label=
-     * 修正：先读取中文名，如果没有则读取默认名
+     * get aapt application name
+     * name application-label-zh_CN application: label=
+     * modify: read chinese name first, if not exists, read the default name
      */
     private static function getAaptApkName($outStr)
     {
@@ -79,20 +83,20 @@ class ApkParser
     }
 
     /**
-     * 清除名称中的各种特殊字符 
+     * Clear the special characters in application name
      */
     private static function cleanName($str)
     {
         if (!$str) {
             return "";
         }
-        $regex = "/[\x{00a0}\x{fffe}\x{200b}]/u"; //清除utf8空格等其他特殊字符
+        $regex = "/[\x{00a0}\x{fffe}\x{200b}]/u"; //Clear utf8 blank space and others
         $str = preg_replace($regex, "", $str);
-        return trim($str); //删除头尾空格
+        return trim($str); //header and footer spaces
     }
 
     /**
-     * 获取包名
+     * Get package name
      * @param type $outStr
      */
     private static function getAaptPname($outStr)
@@ -100,12 +104,12 @@ class ApkParser
         $pattern = "/package: name='(.*)'/iU";
         preg_match($pattern, $outStr, $m);
         if (!$m) {
-            throw new Exception("包名提取出错!");
+            throw new Exception("Extract package name failed!");
         }
-        return trim($m[1]); //包名保持原始包名，不做大小写转换（大小写不同可能是不同包名）
+        return trim($m[1]); //Use the initial package name, keep the upper and lower case.
     }
 
-    //获取包的版本号，数字
+    // Get package version string, version code
     private static function getAaptVerCode($outStr)
     {
         $pattern = "/versionCode='(.*)'/iU";
@@ -113,7 +117,7 @@ class ApkParser
         return $m ? (int)$m[1] : 0;
     }
 
-    //获取os的系统版本号，数字
+    //Get os version, number
     private static function getAaptOsVerCode($outStr)
     {
         $pattern = "/sdkVersion:'(.*)'/iU";
@@ -121,7 +125,7 @@ class ApkParser
         return $m ? (int)$m[1] : 0;
     }
 
-    //获取包的版本号，字符串
+    //Get package version, string 
     private static function getAaptVerName($outStr)
     {
         $pattern = "/versionName='(.*)'/iU";
@@ -129,7 +133,7 @@ class ApkParser
         return $m ? self::getVer($m[1]) : "";
     }
     
-    //获取版本的值，提取规则为数字加点的模式
+    //Get version value, the rule is number mixed with dot. 
     private static function getVer($str)
     {
         $regex = "/([0-9\.]+)/";
@@ -137,7 +141,7 @@ class ApkParser
         return $m ? trim($m[1], '.') : "";
     }
 
-    //应用的权限
+    //Get application permission
     private static function getAaptPermissions($outStr)
     {
         $pattern = "/uses-permission:'(.*)'/iU";
@@ -145,7 +149,7 @@ class ApkParser
         return $m ? array_unique($m[1]) : array();
     }
 
-    //执行aapt命令，并parse其中的信息
+    //execute aapt, get the output info
     private static function parseAapt($apkPath)
     {
         $parseInfo = array();
@@ -157,7 +161,7 @@ class ApkParser
         $parseInfo['ver_code'] = self::getAaptVerCode($outStr);
         $parseInfo['ver_name'] = self::getAaptVerName($outStr);
         $parseInfo['os_ver_code'] = self::getAaptOsVerCode($outStr);
-        $parseInfo['permissions'] = self::getAaptPermissions($outStr); //数组格式的权限
+        $parseInfo['permissions'] = self::getAaptPermissions($outStr); //array
         // $parseInfo['aapt_out'] = $outStr;
         return $parseInfo;
     }
@@ -167,7 +171,7 @@ class ApkParser
         $rsaCmd = self::$arrCmdMap["app_parser.cmd.rsa"]." $apkPath";
         exec($rsaCmd, $out, $ret);
         if ($ret !== 0) {
-            $msg = "获取证书md5出错($rsaCmd: ".implode("\n", $out).")!";
+            $msg = "Get Cert md5 failed ($rsaCmd: ".implode("\n", $out).")!";
             throw new Exception($msg);
         }
         return $out;
@@ -178,11 +182,11 @@ class ApkParser
         $outArr = self::getRsaOutput($apkPath);
         var_dump($outArr);
         $content = implode("\n", $outArr);
-        $regex = "/签名:.*?证书指纹:.*?MD5: ([0-9A-F:]+)/s";
+        $regex = "/签名:.*?证书指纹:.*?MD5: ([0-9A-F:]+)/s"; // I have to remain this. It parses Chinese apk :(
         preg_match_all($regex, $content, $m, PREG_PATTERN_ORDER);
         $rsaList = $m[1];
         if (!$rsaList) {
-            throw new Exception("解析证书为空!");
+            throw new Exception("Cert file is empty!");
         }
         $md5s = array();
         foreach ($rsaList as $rsa) {
@@ -194,6 +198,7 @@ class ApkParser
 
     /**
      * 解析证书md5
+     * Parse Cert md5
      */
     /*private static function parseRsa($apkPath) {
         $parseInfo = array();
@@ -217,7 +222,7 @@ class ApkParser
         $str = trim($str);
         $md5 = strtolower(str_replace(":", "", $str));
         if (strlen($md5) != 32) {
-            throw new Exception("证书md5长度不为32($str)!");
+            throw new Exception("Cert length is not 32 ($str)!");
         }
         return $md5;
     }
@@ -258,7 +263,7 @@ class ApkLanguage
     }
     
     /**
-     * 获取语言(当前仅根据包的名称来) 
+     * Get language (just by package name)
      */
     public static function getLanguage($apkName)
     {

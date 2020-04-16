@@ -1,5 +1,5 @@
 <?php
-//插件，将windwos文件同步到linux上
+// plugin, sync windows files to linux server
 //php "upload2server.php" %:p
 
 

@@ -1,6 +1,7 @@
 <?php
 /**
  * 通用 PHP Dao 操作类
+ * General PHP Dao Class
  */
 class DaoUtil
 {
@@ -26,7 +27,7 @@ class DaoUtil
 				}
 			} catch(Exception $e) {
 				$msg = $e->getMessage();
-				// 不是 gone away 异常
+				// 不是 gone away 异常 not gone away exception
 				if (stripos($msg, self::MYSQL_GONE_AWAY) === false) {
 					throw $e;
 				}

@@ -5,14 +5,17 @@
  * Version: v0.1
  *
  * 功能：解析安卓apk包中的压缩XML文件，还原和读取XML内容
+ * function: parse the AndroidManifest.xml file in android apk package, restore and read xml content.
  *
  * 依赖功能：需要PHP的ZIP包函数支持。
+ * dep: PHP Zip extension nessary.
  ******************************************************/
  
 class ApkParser
 {
     //----------------------
     // 公共函数，供外部调用
+    // public function ,for called external
     //----------------------
 
     public function open($apk_file, $xml_file = 'AndroidManifest.xml')
@@ -97,6 +100,7 @@ class ApkParser
  
     //----------------------
     // 类型常量定义
+    // Type Constant
     //----------------------
 
     const AXML_FILE             = 0x00080003;
@@ -142,6 +146,7 @@ class ApkParser
  
     //----------------------
     // 内部私有函数
+    // Private functions
     //----------------------
 
     private function getElement($path){
@@ -164,7 +169,7 @@ class ApkParser
                     }
                 }
             }
-            // 没有找到节点
+            // 没有找到节点 do not find the node
             return NULL;
         }
         return $r;
@@ -250,7 +255,7 @@ class ApkParser
                     $a['val_type'] >>= 24;
                     $attrs[] = $a;
                 }
-                // 处理TAG字符串
+                // 处理TAG字符串 handle TAG string
                 $tag = "<{$props['ns_name']}";
                 foreach ($this->cur_ns as $uri => $prefix){
                     $uri = $this->getString($uri);
